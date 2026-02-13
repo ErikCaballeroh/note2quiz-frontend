@@ -1,11 +1,7 @@
-import { Text, View } from 'react-native'
+import { Redirect } from 'expo-router'
 
-const Home = () => {
-    return (
-        <View className='mt-10'>
-            <Text className='text-4xl font-bold text-blue-800 text-center'>Note2Quiz</Text>
-        </View>
-    )
+const App = () => {
+    return <Redirect href='/(tabs)' />
 }
 
-export default Home
+export default App
