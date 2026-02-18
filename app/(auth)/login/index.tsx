@@ -6,15 +6,15 @@ import { SafeAreaView, ScrollView, View } from "react-native";
 
 const LoginScreen = () => {
     const router = useRouter();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
 
-    const handleLogin = () => {
+    const handleLogin = (): void => {
         // Mock login - navegar a home
         router.push("/(tabs)");
     };
 
-    const handleForgotPassword = () => {
+    const handleForgotPassword = (): void => {
         // Implementar lógica para recuperar contraseña
         console.log("Olvidé mi contraseña");
     };
