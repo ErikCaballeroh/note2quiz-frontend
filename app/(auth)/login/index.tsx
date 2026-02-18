@@ -2,7 +2,8 @@ import { LoginHeader, RegisterLink } from "@/src/components/login";
 import { LoginForm } from "@/src/components/login/LoginForm";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { SafeAreaView, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const LoginScreen = () => {
     const router = useRouter();

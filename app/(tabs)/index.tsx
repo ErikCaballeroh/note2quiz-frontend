@@ -6,6 +6,7 @@ import {
     StatsCards,
 } from "@/src/components/home";
 import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 import React from "react";
 import {
     Alert,
@@ -34,7 +35,7 @@ const HomeScreen = () => {
             {
                 text: "Cerrar sesión",
                 style: "destructive",
-                onPress: () => navigation.navigate("Login"),
+                onPress: () => router.push("/(auth)/login"),
             },
         ]);
     };
