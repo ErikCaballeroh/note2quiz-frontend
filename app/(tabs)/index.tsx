@@ -5,7 +5,6 @@ import {
     RecentQuizzes,
     StatsCards,
 } from "@/src/components/home";
-import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -22,12 +21,7 @@ const recentQuizzes: QuizData[] = [
     { id: 3, title: "Biología Celular", questions: 10, date: "Hace 3 días", score: 78 },
 ];
 
-interface HomeScreenNavigationType {
-    navigate: (screen: string, params?: { id: number }) => void;
-}
-
 const HomeScreen = () => {
-    const navigation = useNavigation<HomeScreenNavigationType>();
 
     const handleLogout = () => {
         Alert.alert("Cerrar sesión", "¿Cerrar sesión?", [
@@ -53,8 +47,8 @@ const HomeScreen = () => {
                 <View>
                     <HomeHeader
                         userName="Juan"
-                        onProfilePress={() => navigation.navigate("profile")}
-                        onSettingsPress={() => navigation.navigate("settings")}
+                        onProfilePress={() => router.push("/profile")}
+                        onSettingsPress={() => router.push("/settings")}
                         onLogoutPress={handleLogout}
                     />
 
@@ -72,14 +66,14 @@ const HomeScreen = () => {
                 <View className="px-6 py-6">
                     {/* Create Quiz Button */}
                     <CreateQuizButton
-                        onPress={() => navigation.navigate("capture/index")}
+                        onPress={() => router.push("/capture")}
                     />
 
                     {/* Recent Quizzes */}
                     <RecentQuizzes
                         quizzes={recentQuizzes}
-                        onQuizPress={(id) => navigation.navigate("QuizPreview", { id })}
-                        onViewAllPress={() => navigation.navigate("saved/index")}
+                        onQuizPress={(id) => router.push(`/quiz/${id}/preview`)}
+                        onViewAllPress={() => router.push("/saved")}
                     />
                 </View>
             </ScrollView>

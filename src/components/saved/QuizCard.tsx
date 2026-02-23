@@ -30,7 +30,14 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
     };
 
     return (
-        <View className="bg-white border border-gray-200 rounded-xl p-4">
+        <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.push({
+                pathname: "/quiz/[id]/preview",
+                params: { id: quiz.id },
+            })}
+            className="bg-white border border-gray-200 rounded-xl p-4"
+        >
             {/* Card Top */}
             <View className="flex-row items-start justify-between mb-3">
                 <View className="flex-1 mr-3">
@@ -92,6 +99,6 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
                     <Trash2 size={16} color="#DC2626" />
                 </TouchableOpacity>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };

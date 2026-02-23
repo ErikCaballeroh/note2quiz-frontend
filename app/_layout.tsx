@@ -1,7 +1,16 @@
-import { Slot } from 'expo-router';
+import { Stack } from "expo-router";
 import '../global.css';
-const RootLayout = () => {
-    return <Slot />
-}
+export default function RootLayout() {
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
 
-export default RootLayout
+            <Stack.Screen
+                name="quiz"
+                options={{
+                    presentation: "card",
+                }}
+            />
+        </Stack>
+    );
+}
