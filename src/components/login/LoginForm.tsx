@@ -11,6 +11,15 @@ interface LoginFormProps {
     onForgotPassword?: () => void;
 }
 
+interface Nueva {
+    email: string;
+    password: string;
+    onEmailChange: (text: string) => void;
+    onPasswordChange: (text: string) => void;
+    onSubmit: () => void;
+    onForgotPassword?: () => void;
+}
+
 export const LoginForm = ({
     email,
     password,

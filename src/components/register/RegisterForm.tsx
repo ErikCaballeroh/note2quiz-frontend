@@ -34,10 +34,10 @@ export const RegisterForm = ({
                 <FormField
                     label="Nombre Completo"
                     icon={User}
-                    placeholder="tu@email.com"
+                    placeholder="Nombres Apellidos"
                     value={fullName}
                     onChangeText={onFullNameChange}
-                    keyboardType="email-address"
+                    keyboardType="default"
                 />
 
                 {/* Email Field */}

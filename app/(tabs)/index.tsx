@@ -5,9 +5,11 @@ import {
     RecentQuizzes,
     StatsCards,
 } from "@/src/components/home";
+import { useUser } from "@/src/hooks/useAuth";
 import { router } from "expo-router";
 import React from "react";
 import {
+    ActivityIndicator,
     Alert,
     ScrollView,
     StatusBar,
@@ -22,6 +24,7 @@ const recentQuizzes: QuizData[] = [
 ];
 
 const HomeScreen = () => {
+    const { data: user, isLoading } = useUser();
 
     const handleLogout = () => {
         Alert.alert("Cerrar sesión", "¿Cerrar sesión?", [
@@ -33,6 +36,14 @@ const HomeScreen = () => {
             },
         ]);
     };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
+                <ActivityIndicator size="large" color="#0000ff" />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
@@ -46,7 +57,7 @@ const HomeScreen = () => {
                 {/* Header Section */}
                 <View>
                     <HomeHeader
-                        userName="Juan"
+                        userName={user?.name || "Usuario"}
                         onProfilePress={() => router.push("/profile")}
                         onSettingsPress={() => router.push("/settings")}
                         onLogoutPress={handleLogout}

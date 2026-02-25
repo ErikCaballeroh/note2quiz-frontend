@@ -1,18 +1,38 @@
 import { LoginHeader, RegisterLink } from "@/src/components/login";
 import { LoginForm } from "@/src/components/login/LoginForm";
+import { useAuth } from "@/src/hooks/useAuth";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const LoginScreen = () => {
     const router = useRouter();
+
+    const { loginMutation } = useAuth();
+
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
+
     const handleLogin = (): void => {
-        // Mock login - navegar a home
-        router.push("/(tabs)");
+        loginMutation.mutate(
+            {
+                email,
+                password
+            },
+            {
+                onSuccess: () => {
+                    router.replace("/(tabs)");
+                },
+                onError: () => {
+                    Alert.alert(
+                        "Error",
+                        "Credenciales incorrectas"
+                    );
+                }
+            }
+        );
     };
 
     const handleForgotPassword = (): void => {
