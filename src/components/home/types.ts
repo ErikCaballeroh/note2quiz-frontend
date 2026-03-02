@@ -3,7 +3,7 @@ export interface QuizData {
     title: string;
     questions: number;
     date: string;
-    score: number;
+    score?: number;
 }
 
 export interface StatsCardProps {

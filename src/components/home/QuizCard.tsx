@@ -4,6 +4,8 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { QuizCardProps } from "./types";
 
 const QuizCard: React.FC<QuizCardProps> = ({ quiz, onPress }) => {
+
+    console.log(quiz.score);
     return (
         <TouchableOpacity
             className="bg-white rounded-xl p-4 border border-gray-200"
@@ -24,9 +26,13 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onPress }) => {
                         </View>
                     </View>
                 </View>
-                <View className="bg-purple-100 px-3 py-1 rounded-full">
-                    <Text className="text-purple-700 text-sm font-semibold">{quiz.score}%</Text>
-                </View>
+                {
+                    quiz.score
+                        ? <View className="bg-purple-100 px-3 py-1 rounded-full">
+                            <Text className="text-purple-700 text-sm font-semibold">{quiz.score}%</Text>
+                        </View>
+                        : null
+                }
             </View>
         </TouchableOpacity>
     );

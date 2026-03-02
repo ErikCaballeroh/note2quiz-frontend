@@ -5,6 +5,12 @@ export interface QuizDto {
     questions: QuestionDto[];
     createdAt: string;
     userId: number;
+    attempts: AttemptDto[];
+    highestScore?: number;
+}
+
+export interface AttemptDto {
+    score: number;
 }
 
 export interface QuestionDto {
