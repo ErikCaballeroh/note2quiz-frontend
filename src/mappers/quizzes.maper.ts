@@ -1,9 +1,8 @@
 import { QuizData } from "../components/home";
-import { Quiz } from "../types/quiz.types";
-
+import { QuizDto } from "../types/dto/quizzes/quiz.dto";
 
 export class QuizMapper {
-    static fromQuizToQuizData(QuizApi: Quiz): QuizData {
+    static fromQuizDtoToQuizData(QuizApi: QuizDto): QuizData {
         return {
             id: QuizApi.id,
             title: QuizApi.title,

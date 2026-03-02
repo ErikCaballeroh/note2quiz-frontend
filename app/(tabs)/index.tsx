@@ -21,6 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const HomeScreen = () => {
     const { data: userQuery, isLoading } = useUser();
     const { data: recentQuizzesQuery, isLoading: isRecentQuizzesLoading } = useRecentQuizzes();
+    console.log(recentQuizzesQuery)
     const { mutate: logoutMutation } = useLogout();
 
     const handleLogout = () => {
@@ -54,7 +55,7 @@ const HomeScreen = () => {
                 {/* Header Section */}
                 <View>
                     <HomeHeader
-                        userName={userQuery?.data.name || "Usuario"}
+                        userName={userQuery?.name || "Usuario"}
                         onProfilePress={() => router.push("/profile")}
                         onSettingsPress={() => router.push("/settings")}
                         onLogoutPress={handleLogout}
@@ -63,9 +64,9 @@ const HomeScreen = () => {
                     {/* Stats Cards */}
                     <View className="px-6 py-6">
                         <StatsCards
-                            quizCount={userQuery?.data.numQuizzes || 0}
-                            averageScore={userQuery?.data.avgScore || 0}
-                            hoursStudied={userQuery?.data.hoursStudied || 0}
+                            quizCount={userQuery?.numQuizzes || 0}
+                            averageScore={userQuery?.avgScore || 0}
+                            hoursStudied={userQuery?.hoursStudied || 0}
                         />
                     </View>
                 </View>
@@ -78,13 +79,16 @@ const HomeScreen = () => {
                     />
 
                     {
-                        recentQuizzesQuery
-                            ? <Text className="text-gray-500">No hay quizzes recientes</Text>
-                            : <RecentQuizzes
-                                quizzes={recentQuizzesQuery || []}
-                                onQuizPress={(id) => router.push(`/quiz/${id}/preview`)}
-                                onViewAllPress={() => router.push("/saved")}
-                            />
+                        isRecentQuizzesLoading
+                            ? <ActivityIndicator size="small" color="#0000ff" />
+
+                            : (recentQuizzesQuery ?? []).length > 0
+                                ? <RecentQuizzes
+                                    quizzes={recentQuizzesQuery || []}
+                                    onQuizPress={(id) => router.push(`/quiz/${id}/preview`)}
+                                    onViewAllPress={() => router.push("/saved")}
+                                />
+                                : <Text className="text-gray-500">No hay quizzes recientes</Text>
                     }
                 </View>
             </ScrollView>

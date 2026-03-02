@@ -1,14 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { ApiResponse, TypedAxiosInstance } from '../types/api.types';
 
 export const note2quizApi = axios.create({
     baseURL: process.env.EXPO_PUBLIC_API_URL,
     headers: {
         'Content-Type': 'application/json'
     }
-});
+}) as TypedAxiosInstance;
 
-// interceptor para enviar el token automáticamente
 note2quizApi.interceptors.request.use(
     async (config) => {
 
@@ -22,3 +22,15 @@ note2quizApi.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+
+note2quizApi.interceptors.response.use((response) => {
+
+    const data = response.data as ApiResponse<any>;
+
+    if (!data.ok) {
+        throw new Error(data.message || 'API Error');
+    }
+
+    return data.data;
+
+});

@@ -1,32 +1,17 @@
-import { note2quizApi } from "../api/axios";
+import { note2quizApi } from "../api/api";
+import { QuizData } from "../components/home";
 import { QuizMapper } from "../mappers/quizzes.maper";
-import { Quiz, QuizzesResponse } from "../types/quiz.types";
+import { QuizDto } from "../types/dto/quizzes/quiz.dto";
 
-export const getRecentQuizzes = async () => {
-    try {
-        const response = await note2quizApi.get<QuizzesResponse>('/quizzes/recent');
-        return response.data.data.map(QuizMapper.fromQuizToQuizData);
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
+export const getRecentQuizzes = async (): Promise<QuizData[]> => {
+    const response = await note2quizApi.get<QuizDto[]>('/quizzes/recent');
+    return response.map(QuizMapper.fromQuizDtoToQuizData);
 };
 
-export const getQuizzes = async () => {
-    try {
-        const response = await note2quizApi.get<QuizzesResponse>('/quizzes');
-        return response.data;
-    } catch (error) {
-        console.error(error);
-    }
+export const getQuizzes = async (): Promise<QuizDto[]> => {
+    return await note2quizApi.get('/quizzes');
 };
 
-export const getQuizById = async (id: number) => {
-    try {
-        const response = await note2quizApi.get(`/quizzes/${id}`);
-        return response.data.data as Quiz;
-    } catch (error) {
-        console.error(error);
-        throw error;
-    }
+export const getQuizById = async (id: number): Promise<QuizDto> => {
+    return await note2quizApi.get(`/quizzes/${id}`);
 };
