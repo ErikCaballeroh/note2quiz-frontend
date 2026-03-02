@@ -19,7 +19,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({
             />
             <StatsCard
                 icon={Trophy}
-                value={`${averageScore}%`}
+                value={`${averageScore}`}
                 label="Promedio"
                 color="#9333ea"
             />

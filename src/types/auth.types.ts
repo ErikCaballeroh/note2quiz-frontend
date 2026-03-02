@@ -22,3 +22,19 @@ export interface Data {
     name: string;
     createdAt: Date;
 }
+
+export interface UserResponse {
+    ok: boolean;
+    data: DataUser;
+    message: string;
+}
+
+export interface DataUser {
+    id: number;
+    name: string;
+    email: string;
+    createdAt: Date;
+    numQuizzes: number;
+    avgScore: number;
+    hoursStudied: number;
+}

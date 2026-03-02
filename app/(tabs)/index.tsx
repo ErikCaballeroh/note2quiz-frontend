@@ -1,30 +1,27 @@
 import {
     CreateQuizButton,
     HomeHeader,
-    QuizData,
     RecentQuizzes,
-    StatsCards,
+    StatsCards
 } from "@/src/components/home";
-import { useUser } from "@/src/hooks/useAuth";
+import { useLogout } from "@/src/hooks/auth/useLogout";
+import { useUser } from "@/src/hooks/auth/useUser";
+import { useRecentQuizzes } from "@/src/hooks/quizzes/useRecentQuizzes";
 import { router } from "expo-router";
-import React from "react";
 import {
     ActivityIndicator,
     Alert,
     ScrollView,
     StatusBar,
+    Text,
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const recentQuizzes: QuizData[] = [
-    { id: 1, title: "Historia del Arte", questions: 12, date: "Hace 2 horas", score: 85 },
-    { id: 2, title: "Matemáticas Avanzadas", questions: 15, date: "Ayer", score: 92 },
-    { id: 3, title: "Biología Celular", questions: 10, date: "Hace 3 días", score: 78 },
-];
-
 const HomeScreen = () => {
-    const { data: user, isLoading } = useUser();
+    const { data: userQuery, isLoading } = useUser();
+    const { data: recentQuizzesQuery, isLoading: isRecentQuizzesLoading } = useRecentQuizzes();
+    const { mutate: logoutMutation } = useLogout();
 
     const handleLogout = () => {
         Alert.alert("Cerrar sesión", "¿Cerrar sesión?", [
@@ -32,7 +29,7 @@ const HomeScreen = () => {
             {
                 text: "Cerrar sesión",
                 style: "destructive",
-                onPress: () => router.push("/(auth)/login"),
+                onPress: () => logoutMutation(),
             },
         ]);
     };
@@ -57,7 +54,7 @@ const HomeScreen = () => {
                 {/* Header Section */}
                 <View>
                     <HomeHeader
-                        userName={user?.name || "Usuario"}
+                        userName={userQuery?.data.name || "Usuario"}
                         onProfilePress={() => router.push("/profile")}
                         onSettingsPress={() => router.push("/settings")}
                         onLogoutPress={handleLogout}
@@ -66,9 +63,9 @@ const HomeScreen = () => {
                     {/* Stats Cards */}
                     <View className="px-6 py-6">
                         <StatsCards
-                            quizCount={24}
-                            averageScore={85}
-                            hoursStudied={12}
+                            quizCount={userQuery?.data.numQuizzes || 0}
+                            averageScore={userQuery?.data.avgScore || 0}
+                            hoursStudied={userQuery?.data.hoursStudied || 0}
                         />
                     </View>
                 </View>
@@ -80,12 +77,15 @@ const HomeScreen = () => {
                         onPress={() => router.push("/capture")}
                     />
 
-                    {/* Recent Quizzes */}
-                    <RecentQuizzes
-                        quizzes={recentQuizzes}
-                        onQuizPress={(id) => router.push(`/quiz/${id}/preview`)}
-                        onViewAllPress={() => router.push("/saved")}
-                    />
+                    {
+                        recentQuizzesQuery
+                            ? <Text className="text-gray-500">No hay quizzes recientes</Text>
+                            : <RecentQuizzes
+                                quizzes={recentQuizzesQuery || []}
+                                onQuizPress={(id) => router.push(`/quiz/${id}/preview`)}
+                                onViewAllPress={() => router.push("/saved")}
+                            />
+                    }
                 </View>
             </ScrollView>
         </SafeAreaView>

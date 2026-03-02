@@ -1,5 +1,5 @@
 import { note2quizApi } from '../api/axios';
-import { AuthResponse, Data, LoginDto, RegisterDto } from '../types/auth.types';
+import { AuthResponse, LoginDto, RegisterDto, UserResponse } from '../types/auth.types';
 
 export const login = async (
     data: LoginDto
@@ -29,10 +29,10 @@ export const register = async (
 
 };
 
-export const getMe = async (): Promise<Data> => {
+export const getMe = async () => {
     try {
-        const response = await note2quizApi.get<AuthResponse>('/auth/me');
-        return response.data.data;
+        const response = await note2quizApi.get<UserResponse>('/auth/me');
+        return response.data;
     } catch (error) {
         console.log(error);
         throw error;

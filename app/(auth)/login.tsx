@@ -1,6 +1,6 @@
 import { LoginHeader, RegisterLink } from "@/src/components/login";
 import { LoginForm } from "@/src/components/login/LoginForm";
-import { useAuth } from "@/src/hooks/useAuth";
+import { useLogin } from "@/src/hooks/auth/useLogin";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
@@ -9,14 +9,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const LoginScreen = () => {
     const router = useRouter();
 
-    const { loginMutation } = useAuth();
+    const { mutate: loginMutation } = useLogin();
 
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
 
     const handleLogin = (): void => {
-        loginMutation.mutate(
+        loginMutation(
             {
                 email,
                 password
@@ -28,7 +28,7 @@ const LoginScreen = () => {
                 onError: () => {
                     Alert.alert(
                         "Error",
-                        "Credenciales incorrectas"
+                        "Usuario o cotraseña incorrectos. Por favor, inténtalo de nuevo."
                     );
                 }
             }

@@ -1,7 +1,7 @@
 import { LoginLink } from '@/src/components/register/LoginLink'
 import { RegisterForm } from '@/src/components/register/RegisterForm'
 import { RegisterHeader } from '@/src/components/register/RegisterHeader'
-import { useAuth } from '@/src/hooks/useAuth'
+import { useRegister } from '@/src/hooks/auth/useRegister'
 import { registerSchema } from "@/src/schemas/auth.schema"
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 const RegisterScreen = () => {
     const router = useRouter();
 
-    const { registerMutation } = useAuth();
+    const { mutate: registerMutation } = useRegister();
 
     const [fullName, setFullName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
@@ -33,7 +33,7 @@ const RegisterScreen = () => {
             return;
         }
 
-        registerMutation.mutate(
+        registerMutation(
             {
                 name: result.data.name,
                 email: result.data.email,

@@ -1,60 +1,31 @@
+import { useQuiz } from "@/src/hooks/quizzes/useQuiz";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, BookOpen, CheckCircle2, Clock, Edit, Play, Save } from "lucide-react-native";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
-
-// Mock data
-const QUIZZES: Record<string, {
-    title: string;
-    estimatedTime: string;
-    questions: {
-        id: number;
-        question: string;
-        options: string[];
-        correct: number;
-    }[];
-}> = {
-    "1": {
-        title: "Historia del Arte",
-        estimatedTime: "8 min",
-        questions: [
-            {
-                id: 1,
-                question: "¿En qué siglo surgió el movimiento del Renacimiento?",
-                options: ["Siglo XII", "Siglo XIV", "Siglo XVI", "Siglo XVIII"],
-                correct: 1,
-            },
-            {
-                id: 2,
-                question: "¿Quién pintó 'La Última Cena'?",
-                options: ["Miguel Ángel", "Leonardo da Vinci", "Rafael", "Donatello"],
-                correct: 1,
-            },
-            {
-                id: 3,
-                question: "¿Dónde se encuentra el David de Miguel Ángel?",
-                options: ["Roma", "Milán", "Florencia", "Venecia"],
-                correct: 2,
-            },
-        ],
-    },
-    "2": {
-        title: "Ciencias Naturales",
-        estimatedTime: "10 min",
-        questions: [
-            {
-                id: 1,
-                question: "¿Cuál es el elemento más abundante en el universo?",
-                options: ["Oxígeno", "Carbono", "Hidrógeno", "Helio"],
-                correct: 2,
-            },
-        ],
-    },
-};
+import { ArrowLeft, BookOpen, CheckCircle2, Edit, Play, Save, TimerIcon } from "lucide-react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function QuizPreviewScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
-    const quiz = QUIZZES[id ?? "1"] ?? QUIZZES["1"];
+    console.log(id);
+
+    const { data: quizData, isLoading } = useQuiz(Number(id));
+
+    if (isLoading) {
+        return (
+            <View className="flex-1 items-center justify-center bg-gray-50">
+                <ActivityIndicator size="large" color="#7C3AED" />
+            </View>
+        );
+    }
+
+    if (!quizData || !quizData.questions) {
+        return (
+            <View className="flex-1 items-center justify-center bg-gray-50">
+                <Text className="text-gray-500">No se encontró el cuestionario</Text>
+            </View>
+        );
+    }
+
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -73,23 +44,24 @@ export default function QuizPreviewScreen() {
             <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
                 {/* Quiz Info Card */}
                 <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
-                    <Text className="text-2xl font-bold text-gray-900 mb-3">{quiz.title}</Text>
+                    <Text className="text-2xl font-bold text-gray-900 mb-3">{quizData.title}</Text>
+
                     <View className="flex-row gap-4">
                         <View className="flex-row items-center gap-1.5">
                             <BookOpen size={16} color="#7C3AED" />
-                            <Text className="text-sm text-gray-500">{quiz.questions.length} preguntas</Text>
+                            <Text className="text-sm text-gray-500">{quizData.questions.length} preguntas</Text>
                         </View>
                         <View className="flex-row items-center gap-1.5">
-                            <Clock size={16} color="#7C3AED" />
-                            <Text className="text-sm text-gray-500">{quiz.estimatedTime}</Text>
+                            <TimerIcon size={16} color="#7C3AED" />
+                            <Text className="text-sm text-gray-500">{(quizData.questions.length * 30) / 60} min</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Questions List */}
                 <View className="gap-3">
-                    {quiz.questions.map((q, index) => (
-                        <View key={q.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    {quizData.questions.map((q, index) => (
+                        <View key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                             {/* Question header */}
                             <View className="flex-row items-start gap-3 mb-3">
                                 <View className="w-7 h-7 rounded-full bg-purple-100 items-center justify-center mt-0.5">
@@ -100,30 +72,27 @@ export default function QuizPreviewScreen() {
 
                             {/* Options */}
                             <View className="gap-2 pl-10">
-                                {q.options.map((option, optIndex) => {
-                                    const isCorrect = optIndex === q.correct;
-                                    return (
-                                        <View
-                                            key={optIndex}
-                                            className={`flex-row items-center gap-2 px-3 py-2.5 rounded-xl ${isCorrect
-                                                ? "bg-green-50 border border-green-200"
-                                                : "bg-gray-50 border border-gray-100"
+                                {q.options.map((option, optIndex) => (
+                                    <View
+                                        key={optIndex}
+                                        className={`flex-row items-center gap-2 px-3 py-2.5 rounded-xl ${option.isCorrect
+                                            ? "bg-green-50 border border-green-200"
+                                            : "bg-gray-50 border border-gray-100"
+                                            }`}
+                                    >
+                                        {option.isCorrect ? (
+                                            <CheckCircle2 size={16} color="#16A34A" />
+                                        ) : (
+                                            <View className="w-4 h-4 rounded-full border border-gray-300" />
+                                        )}
+                                        <Text
+                                            className={`text-sm ${option.isCorrect ? "text-green-800 font-medium" : "text-gray-600"
                                                 }`}
                                         >
-                                            {isCorrect ? (
-                                                <CheckCircle2 size={16} color="#16A34A" />
-                                            ) : (
-                                                <View className="w-4 h-4 rounded-full border border-gray-300" />
-                                            )}
-                                            <Text
-                                                className={`text-sm ${isCorrect ? "text-green-800 font-medium" : "text-gray-600"
-                                                    }`}
-                                            >
-                                                {option}
-                                            </Text>
-                                        </View>
-                                    );
-                                })}
+                                            {option.text}
+                                        </Text>
+                                    </View>
+                                ))}
                             </View>
                         </View>
                     ))}
