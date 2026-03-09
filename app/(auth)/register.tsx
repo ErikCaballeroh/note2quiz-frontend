@@ -1,12 +1,13 @@
-import { LoginLink } from '@/src/components/register/LoginLink'
-import { RegisterForm } from '@/src/components/register/RegisterForm'
-import { RegisterHeader } from '@/src/components/register/RegisterHeader'
-import { useRegister } from '@/src/hooks/auth/useRegister'
-import { registerSchema } from "@/src/schemas/auth.schema"
-import { useRouter } from 'expo-router'
 import { useState } from 'react'
+
 import { Alert, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import { useRouter } from 'expo-router'
+
+import { LoginLink, RegisterForm, RegisterHeader } from '@/src/components/register'
+import { useRegister } from '@/src/hooks/auth/useRegister'
+import { registerSchema } from "@/src/schemas/auth.schema"
 
 const RegisterScreen = () => {
     const router = useRouter();
