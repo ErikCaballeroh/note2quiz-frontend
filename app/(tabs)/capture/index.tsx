@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ScrollView } from "react-native";
+import { useState, useEffect } from "react";
+import { ScrollView, DeviceEventEmitter } from "react-native";
 
 import {
     CaptureActions,
@@ -14,6 +14,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const CaptureScreen = () => {
     const router = useRouter();
     const [images, setImages] = useState<string[]>([]);
+
+    useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('quizGenerated', () => {
+            setImages([]);
+        });
+        return () => subscription.remove();
+    }, []);
 
     const addImages = (uris: string[]) =>
         setImages((prev) => [...prev, ...uris]);

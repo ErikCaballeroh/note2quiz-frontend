@@ -32,7 +32,7 @@ export default function QuizPreviewScreen() {
             {/* Header */}
             <View className="flex-row items-center justify-between px-4 pt-14 pb-4 bg-white border-b border-gray-200">
                 <TouchableOpacity
-                    onPress={() => router.back()}
+                    onPress={() => router.replace("/(tabs)")}
                     className="w-10 h-10 items-center justify-center rounded-xl bg-gray-100"
                 >
                     <ArrowLeft size={20} color="#374151" />

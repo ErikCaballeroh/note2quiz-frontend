@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, Animated, Easing } from "react-native";
+import { View, Text, Animated, Easing, DeviceEventEmitter } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ProcessingAnimation, ProcessingSteps, ProcessingProgressBar } from "@/src/components/processing";
 import { useQuizProcessing } from "@/src/hooks/quiz/useQuizProcessing";
@@ -43,7 +43,8 @@ export default function ProcessingScreen() {
     // Navigate after completion
     if (currentStep === 'completed' && quiz) {
       const timer = setTimeout(() => {
-        router.push({
+        DeviceEventEmitter.emit('quizGenerated');
+        router.replace({
           pathname: "/quiz/[id]/preview",
           params: { id: quiz.id }
         });
