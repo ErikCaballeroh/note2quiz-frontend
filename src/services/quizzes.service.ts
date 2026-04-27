@@ -19,3 +19,7 @@ export const getQuizById = async (id: number): Promise<QuizDto> => {
 export const generateQuiz = async (text: string): Promise<QuizDto> => {
     return await note2quizApi.post('/quizzes/generate', { text });
 };
+
+export const updateQuiz = async (id: number, data: { title?: string; questions?: any }): Promise<QuizDto> => {
+    return await note2quizApi.put(`/quizzes/${id}`, data);
+};

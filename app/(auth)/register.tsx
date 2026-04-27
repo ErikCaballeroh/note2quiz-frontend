@@ -20,34 +20,41 @@ const RegisterScreen = () => {
     const [confirmPassword, setConfirmPassword] = useState<string>("");
 
     const handleRegister = () => {
-        const result = registerSchema.safeParse({
-            name: fullName,
-            email,
-            password,
-            confirmPassword
-        });
+    console.log("handleRegister llamado");
+    const result = registerSchema.safeParse({
+        name: fullName,
+        email,
+        password,
+        confirmPassword
+    });
 
-        if (!result.success) {
-            const firstError =
-                result.error.issues[0].message;
-            Alert.alert("Error", firstError);
-            return;
-        }
+    console.log("resultado schema:", JSON.stringify(result));
 
-        registerMutation(
-            {
-                name: result.data.name,
-                email: result.data.email,
-                password: result.data.password
+    if (!result.success) {
+        const firstError = result.error.issues[0].message;
+        Alert.alert("Error", firstError);
+        return;
+    }
+
+    console.log("llamando registerMutation...");
+    registerMutation(
+        {
+            name: result.data.name,
+            email: result.data.email,
+            password: result.data.password
+        },
+        {
+            onSuccess: () => {
+                console.log("registro exitoso");
+                router.replace("/(tabs)");
             },
-            {
-                onSuccess: () => {
-                    router.replace("/(tabs)");
-                }
+            onError: (error: any) => {
+                console.log("error registro:", JSON.stringify(error));
+                Alert.alert("Error", error?.message || JSON.stringify(error));
             }
-        );
-
-    };
+        }
+    );
+};
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
