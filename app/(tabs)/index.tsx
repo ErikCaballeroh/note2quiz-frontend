@@ -56,8 +56,6 @@ const HomeScreen = () => {
                 <View>
                     <HomeHeader
                         userName={userQuery?.name || "Usuario"}
-                        onProfilePress={() => router.push("/profile")}
-                        onSettingsPress={() => router.push("/settings")}
                         onLogoutPress={handleLogout}
                     />
 

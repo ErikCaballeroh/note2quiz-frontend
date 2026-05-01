@@ -30,8 +30,6 @@ export interface RecentQuizzesProps {
 
 export interface HomeHeaderProps {
     userName: string;
-    onProfilePress: () => void;
-    onSettingsPress: () => void;
     onLogoutPress: () => void;
 }
 
