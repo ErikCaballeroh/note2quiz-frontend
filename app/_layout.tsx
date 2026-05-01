@@ -10,7 +10,13 @@ export default function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="quiz" />
+
+                <Stack.Screen
+                    name="quiz"
+                    options={{
+                        presentation: "card",
+                    }}
+                />
             </Stack>
         </QueryClientProvider>
     );

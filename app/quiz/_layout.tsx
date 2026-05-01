@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
 
-export default function QuizIdLayout() {
+export default function QuizLayout() {
     return <Stack screenOptions={{ headerShown: false }} />;
 }
