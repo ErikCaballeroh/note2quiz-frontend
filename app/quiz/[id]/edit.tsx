@@ -1,7 +1,17 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, GripVertical, Plus, Save, Trash2 } from "lucide-react-native";
-import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Save, Trash2 } from "lucide-react-native";
+import { useCallback, useRef, useState } from "react";
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 
 interface Question {
     id: number;
@@ -10,9 +20,16 @@ interface Question {
     correct: number;
 }
 
+const LAYOUT_TRANSITION = LinearTransition.springify()
+    .damping(18)
+    .stiffness(200)
+    .mass(0.6);
+
 export default function EditQuizScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
+    const scrollRef = useRef<ScrollView>(null);
+    const itemPositions = useRef<Record<number, number>>({});
 
     const [title, setTitle] = useState("Historia del Arte");
     const [questions, setQuestions] = useState<Question[]>([
@@ -70,6 +87,34 @@ export default function EditQuizScreen() {
         );
     };
 
+    const moveQuestion = useCallback(
+        (index: number, direction: "up" | "down") => {
+            const newIndex = direction === "up" ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= questions.length) return;
+
+            const next = [...questions];
+            const movedId = next[index].id;
+            [next[index], next[newIndex]] = [next[newIndex], next[index]];
+            setQuestions(next);
+
+            // Scroll to the moved question's new position after layout settles
+            setTimeout(() => {
+                const y = itemPositions.current[movedId];
+                if (y !== undefined && scrollRef.current) {
+                    scrollRef.current.scrollTo({ y: Math.max(0, y - 16), animated: true });
+                }
+            }, 100);
+        },
+        [questions]
+    );
+
+    const handleItemLayout = useCallback(
+        (questionId: number, y: number) => {
+            itemPositions.current[questionId] = y;
+        },
+        []
+    );
+
     return (
         <KeyboardAvoidingView
             className="flex-1 bg-gray-50"
@@ -103,31 +148,70 @@ export default function EditQuizScreen() {
 
             {/* Questions List */}
             <ScrollView
+                ref={scrollRef}
                 className="flex-1 px-6 py-6"
                 contentContainerStyle={{ paddingBottom: 100 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View className="gap-4">
+                <View style={{ gap: 16 }}>
                     {questions.map((q, index) => (
-                        <View
+                        <Animated.View
                             key={q.id}
+                            layout={LAYOUT_TRANSITION}
+                            entering={FadeIn.duration(200)}
+                            exiting={FadeOut.duration(150)}
+                            onLayout={(e) =>
+                                handleItemLayout(q.id, e.nativeEvent.layout.y)
+                            }
                             className="bg-white border border-gray-200 rounded-xl p-5"
                         >
                             {/* Question Header */}
                             <View className="flex-row items-start gap-3 mb-4">
-                                <View className="flex-row items-center gap-2">
-                                    <GripVertical size={20} color="#9CA3AF" />
+                                {/* Move arrows + number */}
+                                <View className="items-center gap-1">
+                                    <TouchableOpacity
+                                        onPress={() => moveQuestion(index, "up")}
+                                        disabled={index === 0}
+                                        className={`w-8 h-8 items-center justify-center rounded-lg ${index === 0 ? "opacity-25" : "active:bg-purple-50"
+                                            }`}
+                                    >
+                                        <ChevronUp
+                                            size={18}
+                                            color={index === 0 ? "#D1D5DB" : "#7C3AED"}
+                                        />
+                                    </TouchableOpacity>
+
                                     <View className="w-8 h-8 bg-purple-600 rounded-full items-center justify-center">
                                         <Text className="text-white font-bold text-sm">
                                             {index + 1}
                                         </Text>
                                     </View>
+
+                                    <TouchableOpacity
+                                        onPress={() => moveQuestion(index, "down")}
+                                        disabled={index === questions.length - 1}
+                                        className={`w-8 h-8 items-center justify-center rounded-lg ${index === questions.length - 1
+                                                ? "opacity-25"
+                                                : "active:bg-purple-50"
+                                            }`}
+                                    >
+                                        <ChevronDown
+                                            size={18}
+                                            color={
+                                                index === questions.length - 1
+                                                    ? "#D1D5DB"
+                                                    : "#7C3AED"
+                                            }
+                                        />
+                                    </TouchableOpacity>
                                 </View>
 
                                 <TextInput
                                     value={q.question}
-                                    onChangeText={(val) => updateQuestion(q.id, "question", val)}
+                                    onChangeText={(val) =>
+                                        updateQuestion(q.id, "question", val)
+                                    }
                                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 focus:border-purple-600"
                                     placeholder="Escribe la pregunta"
                                     placeholderTextColor="#9CA3AF"
@@ -147,12 +231,17 @@ export default function EditQuizScreen() {
                             {/* Options */}
                             <View className="ml-11 gap-2">
                                 {q.options.map((option, optIndex) => (
-                                    <View key={optIndex} className="flex-row items-center gap-2">
+                                    <View
+                                        key={optIndex}
+                                        className="flex-row items-center gap-2"
+                                    >
                                         <TouchableOpacity
-                                            onPress={() => updateQuestion(q.id, "correct", optIndex)}
+                                            onPress={() =>
+                                                updateQuestion(q.id, "correct", optIndex)
+                                            }
                                             className={`w-6 h-6 rounded-full border-2 items-center justify-center ${optIndex === q.correct
-                                                ? "bg-purple-600 border-purple-600"
-                                                : "border-gray-300"
+                                                    ? "bg-purple-600 border-purple-600"
+                                                    : "border-gray-300"
                                                 }`}
                                         >
                                             {optIndex === q.correct && (
@@ -162,10 +251,12 @@ export default function EditQuizScreen() {
 
                                         <TextInput
                                             value={option}
-                                            onChangeText={(val) => updateOption(q.id, optIndex, val)}
+                                            onChangeText={(val) =>
+                                                updateOption(q.id, optIndex, val)
+                                            }
                                             className={`flex-1 px-3 py-2 border rounded-lg text-gray-900 focus:border-purple-600 ${optIndex === q.correct
-                                                ? "bg-purple-50 border-purple-600"
-                                                : "border-gray-300"
+                                                    ? "bg-purple-50 border-purple-600"
+                                                    : "border-gray-300"
                                                 }`}
                                             placeholder={`Opción ${optIndex + 1}`}
                                             placeholderTextColor="#9CA3AF"
@@ -177,7 +268,7 @@ export default function EditQuizScreen() {
                                     Toca el círculo para marcar la respuesta correcta
                                 </Text>
                             </View>
-                        </View>
+                        </Animated.View>
                     ))}
 
                     {/* Add Question Button */}
