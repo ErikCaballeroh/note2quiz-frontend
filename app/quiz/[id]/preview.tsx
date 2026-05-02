@@ -1,7 +1,7 @@
 import { useQuiz } from "@/src/hooks/quizzes/useQuiz";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, BookOpen, CheckCircle2, Edit, Play, Save, TimerIcon } from "lucide-react-native";
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ArrowLeft, BookOpen, CheckCircle2, Edit, Play, TimerIcon } from "lucide-react-native";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function QuizPreviewScreen() {
     const router = useRouter();
@@ -107,18 +107,6 @@ export default function QuizPreviewScreen() {
                 >
                     <Edit size={16} color="#374151" />
                     <Text className="text-gray-700 font-semibold text-sm">Editar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={() => {
-                        Alert.alert("Éxito", "Cuestionario guardado", [
-                            { text: "OK", onPress: () => router.push("/(tabs)") },
-                        ]);
-                    }}
-                    className="flex-1 flex-row items-center justify-center gap-1.5 border border-gray-300 py-3 rounded-xl"
-                >
-                    <Save size={16} color="#374151" />
-                    <Text className="text-gray-700 font-semibold text-sm">Guardar</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity

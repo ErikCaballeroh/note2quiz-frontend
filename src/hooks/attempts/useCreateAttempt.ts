@@ -10,6 +10,7 @@ export const useCreateAttempt = () => {
         mutationFn: (data: CreateAttemptRequestDto) => createAttempt(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["quiz", "recent"] });
+            queryClient.invalidateQueries({ queryKey: ["quiz", "saved"] });
         },
     });
 };

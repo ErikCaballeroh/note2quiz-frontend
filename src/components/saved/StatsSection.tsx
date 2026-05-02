@@ -4,13 +4,13 @@ import { Text, View } from "react-native";
 interface StatsSectionProps {
     totalQuizzes: number;
     averageScore: string;
-    timeThisWeek: string;
+    hoursStudied: string;
 }
 
 export const StatsSection = ({
     totalQuizzes,
     averageScore,
-    timeThisWeek,
+    hoursStudied,
 }: StatsSectionProps) => {
     return (
         <View className="flex-row gap-3 px-4 mb-5">
@@ -31,9 +31,9 @@ export const StatsSection = ({
             <View className="flex-1 bg-white border border-gray-200 rounded-xl p-4 items-center">
                 <Clock size={24} color="#7C3AED" />
                 <Text className="text-2xl font-bold text-gray-900 mt-1">
-                    {timeThisWeek}
+                    {hoursStudied}
                 </Text>
-                <Text className="text-xs text-gray-600">Esta semana</Text>
+                <Text className="text-xs text-gray-600">Estudiadas</Text>
             </View>
         </View>
     );

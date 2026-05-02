@@ -11,6 +11,7 @@ import { useQuiz } from "@/src/hooks/quizzes/useQuiz";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GameScreen() {
     const router = useRouter();
@@ -77,7 +78,7 @@ export default function GameScreen() {
 
     // Game screen
     return (
-        <View className="flex-1 bg-white">
+        <SafeAreaView className="flex-1 bg-white">
             <GameHeader
                 timeLeft={timeLeft}
                 currentQuestion={currentQuestion + 1}
@@ -99,6 +100,6 @@ export default function GameScreen() {
                     />
                 </>
             )}
-        </View>
+        </SafeAreaView>
     );
 }
