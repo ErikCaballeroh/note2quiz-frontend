@@ -21,7 +21,7 @@ export const SavedHeader = ({ searchQuery, onSearchChange }: SavedHeaderProps) =
                 </TouchableOpacity>
                 <Text className="text-xl font-bold text-gray-900">Mis Cuestionarios</Text>
                 <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-xl">
-                    <Filter size={24} color="#374151" />
+                    <Filter size={24} color="#37415100" />
                 </TouchableOpacity>
             </View>
 

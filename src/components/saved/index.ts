@@ -1,3 +1,6 @@
+export { CategoriesAccordion } from "./CategoriesAccordion";
+export { CategoryActionMenuModal } from "./CategoryActionMenuModal";
+export { CategoryFormModal } from "./CategoryFormModal";
 export { CategoryTabs } from "./CategoryTabs";
 export { QuizCard } from "./QuizCard";
 export type { Quiz } from "./QuizCard";
