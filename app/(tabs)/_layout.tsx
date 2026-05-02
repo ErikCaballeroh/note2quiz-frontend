@@ -72,14 +72,14 @@ const TabsLayout = () => {
                 }}
             />
             <Tabs.Screen
-                name="capture/index"
+                name="capture"
                 options={{
                     tabBarIcon: ({ focused }) =>
                         <TabIcon focused={focused} Icon={Camera} title="Capturar" />
                 }}
             />
             <Tabs.Screen
-                name="saved/index"
+                name="saved"
                 options={{
                     tabBarIcon: ({ focused }) =>
                         <TabIcon focused={focused} Icon={History} title="Guardados" />
