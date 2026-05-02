@@ -9,11 +9,20 @@ export const useGameQuiz = (quizData: QuizDto | undefined) => {
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(20);
     const [gameFinished, setGameFinished] = useState(false);
+    const [gameDuration, setGameDuration] = useState(0);
 
     const progressAnim = useRef(new Animated.Value(0)).current;
+    const gameStartRef = useRef(Date.now());
     const questions = quizData?.questions || [];
 
     const currentQuestionData = questions[currentQuestion] as QuestionDto | undefined;
+
+    useEffect(() => {
+        if (!quizData) return;
+
+        gameStartRef.current = Date.now();
+        setGameDuration(0);
+    }, [quizData?.id]);
 
     // Timer countdown
     useEffect(() => {
@@ -61,18 +70,21 @@ export const useGameQuiz = (quizData: QuizDto | undefined) => {
                 setSelectedAnswer(null);
                 setShowResult(false);
             } else {
+                setGameDuration(Math.max(1, Math.ceil((Date.now() - gameStartRef.current) / 1000)));
                 setGameFinished(true);
             }
         }, 2000);
     };
 
     const handleRestart = () => {
+        gameStartRef.current = Date.now();
         setCurrentQuestion(0);
         setScore(0);
         setGameFinished(false);
         setSelectedAnswer(null);
         setShowResult(false);
         setTimeLeft(20);
+        setGameDuration(0);
         progressAnim.setValue(0);
     };
 
@@ -83,6 +95,7 @@ export const useGameQuiz = (quizData: QuizDto | undefined) => {
         score,
         timeLeft,
         gameFinished,
+        gameDuration,
         progressAnim,
         currentQuestionData,
         totalQuestions: questions.length,

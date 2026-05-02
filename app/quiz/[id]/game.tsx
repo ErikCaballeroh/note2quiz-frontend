@@ -5,9 +5,11 @@ import {
     GameProgressBar,
     QuestionCard,
 } from "@/src/components/game";
+import { useCreateAttempt } from "@/src/hooks/attempts/useCreateAttempt";
 import { useGameQuiz } from "@/src/hooks/quiz/useGameQuiz";
 import { useQuiz } from "@/src/hooks/quizzes/useQuiz";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 export default function GameScreen() {
@@ -25,12 +27,25 @@ export default function GameScreen() {
         score,
         timeLeft,
         gameFinished,
+        gameDuration,
         progressAnim,
         currentQuestionData,
         totalQuestions,
         handleAnswer,
         handleRestart,
     } = useGameQuiz(quizData);
+    const { mutate: createAttempt } = useCreateAttempt();
+    const attemptScore = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+
+    useEffect(() => {
+        if (!gameFinished || !quizData?.id) return;
+
+        createAttempt({
+            quizId: quizData.id,
+            score: attemptScore,
+            duration: gameDuration,
+        });
+    }, [attemptScore, createAttempt, gameDuration, gameFinished, quizData?.id]);
 
     if (isLoading) {
         return (
