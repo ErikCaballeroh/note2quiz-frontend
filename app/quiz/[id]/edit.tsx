@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -17,6 +17,9 @@ import {
     EditQuizSaveBar,
     EditQuizTitleInput,
 } from "@/src/components/edit";
+
+import { useQuiz } from "@/src/hooks/quizzes/useQuiz";
+import { useUpdateQuiz } from "@/src/hooks/quizzes/useUpdateQuiz";
 
 const SAVE_BTN_HEIGHT = 76;
 const SCROLL_PADDING = 24; // paddingTop del scrollContent
@@ -37,21 +40,31 @@ export default function EditQuizScreen() {
     const moveRafRef = useRef<number | null>(null);
     const pendingScrollToEnd = useRef(false);
 
-    const [title, setTitle] = useState("Historia del Arte");
-    const [questions, setQuestions] = useState<EditQuestion[]>([
-        {
-            id: 1,
-            question: "¿En qué siglo surgió el movimiento del Renacimiento?",
-            options: ["Siglo XII", "Siglo XIV", "Siglo XVI", "Siglo XVIII"],
-            correct: 1,
-        },
-        {
-            id: 2,
-            question: "¿Quién pintó 'La Última Cena'?",
-            options: ["Miguel Ángel", "Leonardo da Vinci", "Rafael", "Donatello"],
-            correct: 1,
-        },
-    ]);
+    const [title, setTitle] = useState("");
+    const [questions, setQuestions] = useState<EditQuestion[]>([]);
+
+    // evitar sobreescribir ediciones locales
+    const initialLoaded = useRef(false);
+
+    // Hook para cargar quiz desde backend
+    const { data: quizData, isLoading } = useQuiz(Number(id));
+    const updateMutation = useUpdateQuiz(Number(id));
+
+    useEffect(() => {
+        if (!quizData || initialLoaded.current) return;
+
+        setTitle(quizData.title || "");
+
+        const mapped: EditQuestion[] = (quizData.questions || []).map((q, idx) => ({
+            id: Date.now() + idx,
+            question: q.question,
+            options: q.options.map((o) => o.text),
+            correct: q.options.findIndex((o) => o.isCorrect) >= 0 ? q.options.findIndex((o) => o.isCorrect) : 0,
+        }));
+
+        setQuestions(mapped);
+        initialLoaded.current = true;
+    }, [quizData]);
 
     // Mantener questionsRef sincronizado
     questionsRef.current = questions;
@@ -138,8 +151,23 @@ export default function EditQuizScreen() {
     );
 
     const handleSave = () => {
-        Alert.alert("Éxito", "Cuestionario guardado");
-        router.back();
+        const payload = {
+            title,
+            questions: questions.map((q) => ({
+                question: q.question,
+                options: q.options.map((text, i) => ({ text, isCorrect: i === q.correct })),
+            })),
+        };
+
+        updateMutation.mutate(payload, {
+            onSuccess: () => {
+                Alert.alert("Éxito", "Cuestionario guardado");
+                router.back();
+            },
+            onError: (err: any) => {
+                Alert.alert("Error", err?.message || "Error al guardar");
+            },
+        });
     };
 
     const addQuestion = () => {
