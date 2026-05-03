@@ -27,16 +27,23 @@ const LAYOUT_TRANSITION = LinearTransition.springify()
     .mass(0.6);
 
 const SAVE_BTN_HEIGHT = 76;
+const SCROLL_PADDING = 24; // paddingTop del scrollContent
+const GAP = 16;            // gap entre items
 
 export default function EditQuizScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
     const scrollRef = useRef<ScrollView>(null);
 
-    // Track each question card's position relative to ScrollView content
-    const itemLayouts = useRef<Record<number, { y: number; h: number }>>({});
+    // Altura de cada card por questionId
+    const cardHeights = useRef<Record<number, number>>({});
+    // Orden actual de ids para calcular posición Y acumulada
+    const questionsRef = useRef<Question[]>([]);
+
     const viewportH = useRef(0);
-    const contentH = useRef(0);
+    const scrollOffset = useRef(0);
+    const moveRafRef = useRef<number | null>(null);
+    const pendingScrollToEnd = useRef(false);
 
     const [title, setTitle] = useState("Historia del Arte");
     const [questions, setQuestions] = useState<Question[]>([
@@ -54,6 +61,90 @@ export default function EditQuizScreen() {
         },
     ]);
 
+    // Mantener questionsRef sincronizado
+    questionsRef.current = questions;
+
+    // Altura del título (primer elemento del scroll)
+    const titleHeight = useRef(0);
+
+    /**
+     * Calcula la posición Y de un card dentro del scroll content
+     * sumando: paddingTop + titleHeight + gap + alturas de cards anteriores + gaps
+     */
+    const getCardYForList = useCallback((list: Question[], questionId: number): { y: number; h: number } | null => {
+        const idx = list.findIndex((q) => q.id === questionId);
+        if (idx === -1) return null;
+
+        // paddingTop del contenedor + altura del title input + gap
+        let y = SCROLL_PADDING + titleHeight.current + GAP;
+
+        for (let i = 0; i < idx; i++) {
+            const h = cardHeights.current[list[i].id];
+            if (h === undefined) return null; // aún no se midió
+            y += h + GAP;
+        }
+
+        const h = cardHeights.current[questionId];
+        if (h === undefined) return null;
+
+        return { y, h };
+    }, []);
+
+    const scrollToCard = useCallback((questionId: number, direction: "up" | "down", listOverride?: Question[]) => {
+        const list = listOverride ?? questionsRef.current;
+        const layout = getCardYForList(list, questionId);
+        if (!layout || !scrollRef.current) return false;
+
+        const { y, h } = layout;
+        const usableVp = viewportH.current - SAVE_BTN_HEIGHT;
+        const top = scrollOffset.current;
+        const bottom = top + usableVp;
+
+        const alreadyVisible = y >= top && y + h <= bottom;
+        if (alreadyVisible) return false;
+
+        let targetOffset: number;
+        if (direction === "up") {
+            targetOffset = y - 8;
+        } else {
+            targetOffset = y + h - usableVp + 8;
+        }
+
+        scrollRef.current.scrollTo({
+            y: Math.max(0, targetOffset),
+            animated: true,
+        });
+        return true;
+    }, [getCardYForList]);
+
+    const moveQuestion = useCallback(
+        (index: number, direction: "up" | "down") => {
+            const newIndex = direction === "up" ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= questions.length) return;
+
+            const questionId = questions[index].id;
+            const next = [...questions];
+            [next[index], next[newIndex]] = [next[newIndex], next[index]];
+
+            if (moveRafRef.current !== null) {
+                cancelAnimationFrame(moveRafRef.current);
+                moveRafRef.current = null;
+            }
+
+            const didScroll = scrollToCard(questionId, direction, next);
+
+            if (didScroll) {
+                moveRafRef.current = requestAnimationFrame(() => {
+                    setQuestions(next);
+                    moveRafRef.current = null;
+                });
+            } else {
+                setQuestions(next);
+            }
+        },
+        [questions, scrollToCard]
+    );
+
     const handleSave = () => {
         Alert.alert("Éxito", "Cuestionario guardado");
         router.back();
@@ -66,97 +157,30 @@ export default function EditQuizScreen() {
             options: ["Opción 1", "Opción 2", "Opción 3", "Opción 4"],
             correct: 0,
         };
-        setQuestions([...questions, newQuestion]);
+        pendingScrollToEnd.current = true;
+        setQuestions((prev) => [...prev, newQuestion]);
     };
 
     const deleteQuestion = (questionId: number) => {
-        setQuestions(questions.filter((q) => q.id !== questionId));
+        setQuestions((prev) => prev.filter((q) => q.id !== questionId));
     };
 
     const updateQuestion = (questionId: number, field: string, value: any) => {
-        setQuestions(
-            questions.map((q) =>
-                q.id === questionId ? { ...q, [field]: value } : q
-            )
+        setQuestions((prev) =>
+            prev.map((q) => (q.id === questionId ? { ...q, [field]: value } : q))
         );
     };
 
-    const updateOption = (
-        questionId: number,
-        optionIndex: number,
-        value: string
-    ) => {
-        setQuestions(
-            questions.map((q) => {
-                if (q.id === questionId) {
-                    const newOptions = [...q.options];
-                    newOptions[optionIndex] = value;
-                    return { ...q, options: newOptions };
-                }
-                return q;
+    const updateOption = (questionId: number, optionIndex: number, value: string) => {
+        setQuestions((prev) =>
+            prev.map((q) => {
+                if (q.id !== questionId) return q;
+                const newOptions = [...q.options];
+                newOptions[optionIndex] = value;
+                return { ...q, options: newOptions };
             })
         );
     };
-
-    /**
-     * Scrolls so that the question with `id` is fully visible.
-     * Prefers top-alignment; falls back to bottom-alignment
-     * (above the save button) if the content can't scroll far enough.
-     */
-    const scrollToQuestion = useCallback((questionId: number) => {
-        setTimeout(() => {
-            const layout = itemLayouts.current[questionId];
-            if (!layout || !scrollRef.current) return;
-
-            const vp = viewportH.current;
-            const maxScroll = Math.max(0, contentH.current - vp);
-            const usableVp = vp - SAVE_BTN_HEIGHT; // area not covered by save btn
-
-            // Try: place item at top with small padding
-            const topAligned = layout.y - 8;
-
-            // Clamp to valid scroll range
-            const clamped = Math.max(0, Math.min(topAligned, maxScroll));
-
-            // Check if the full card is visible at that scroll position
-            const itemTop = layout.y - clamped;
-            const itemBottom = itemTop + layout.h;
-
-            if (itemBottom <= usableVp && itemTop >= 0) {
-                // Fully visible → use top-aligned scroll
-                scrollRef.current.scrollTo({ y: clamped, animated: true });
-            } else {
-                // Card bottom would be hidden by save button →
-                // align card bottom to just above save button
-                const bottomAligned = layout.y + layout.h - usableVp + 8;
-                scrollRef.current.scrollTo({
-                    y: Math.max(0, Math.min(bottomAligned, maxScroll)),
-                    animated: true,
-                });
-            }
-        }, 150);
-    }, []);
-
-    const moveQuestion = useCallback(
-        (index: number, direction: "up" | "down") => {
-            const newIndex = direction === "up" ? index - 1 : index + 1;
-            if (newIndex < 0 || newIndex >= questions.length) return;
-
-            const next = [...questions];
-            const movedId = next[index].id;
-            [next[index], next[newIndex]] = [next[newIndex], next[index]];
-            setQuestions(next);
-            scrollToQuestion(movedId);
-        },
-        [questions, scrollToQuestion]
-    );
-
-    const handleItemLayout = useCallback(
-        (questionId: number, y: number, h: number) => {
-            itemLayouts.current[questionId] = { y, h };
-        },
-        []
-    );
 
     return (
         <KeyboardAvoidingView
@@ -179,171 +203,171 @@ export default function EditQuizScreen() {
                 </View>
             </View>
 
-            {/* Scrollable content */}
             <ScrollView
                 ref={scrollRef}
-                className="flex-1 px-6 py-6"
-                contentContainerStyle={s.scrollContent}
+                className="flex-1"
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
+                onContentSizeChange={() => {
+                    if (!pendingScrollToEnd.current || !scrollRef.current) return;
+                    pendingScrollToEnd.current = false;
+                    scrollRef.current.scrollToEnd({ animated: true });
+                }}
                 onLayout={(e) => {
                     viewportH.current = e.nativeEvent.layout.height;
                 }}
-                onContentSizeChange={(_w, h) => {
-                    contentH.current = h;
+                onScroll={(e) => {
+                    scrollOffset.current = e.nativeEvent.contentOffset.y;
                 }}
+                scrollEventThrottle={16}
             >
-                {/* Title Input */}
-                <TextInput
-                    value={title}
-                    onChangeText={setTitle}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-lg font-semibold text-gray-900 bg-white focus:border-purple-600"
-                    placeholder="Título del cuestionario"
-                    placeholderTextColor="#9CA3AF"
-                />
-
-                {/* Questions */}
-                {questions.map((q, index) => (
-                    <Animated.View
-                        key={q.id}
-                        layout={LAYOUT_TRANSITION}
-                        entering={FadeIn.duration(200)}
-                        exiting={FadeOut.duration(150)}
+                <View style={s.scrollContent}>
+                    {/* Title Input */}
+                    <View
                         onLayout={(e) => {
-                            // e.nativeEvent.layout.y is relative to parent (ScrollView content)
-                            handleItemLayout(
-                                q.id,
-                                e.nativeEvent.layout.y,
-                                e.nativeEvent.layout.height
-                            );
+                            titleHeight.current = e.nativeEvent.layout.height;
                         }}
-                        className="bg-white border border-gray-200 rounded-xl p-5"
                     >
-                        {/* Question Header */}
-                        <View className="flex-row items-start gap-3 mb-4">
-                            {/* Move arrows + number */}
-                            <View className="items-center gap-1">
-                                <TouchableOpacity
-                                    onPress={() => moveQuestion(index, "up")}
-                                    disabled={index === 0}
-                                    className={`w-8 h-8 items-center justify-center rounded-lg ${
-                                        index === 0
-                                            ? "opacity-25"
-                                            : "active:bg-purple-50"
-                                    }`}
-                                >
-                                    <ChevronUp
-                                        size={18}
-                                        color={index === 0 ? "#D1D5DB" : "#7C3AED"}
-                                    />
-                                </TouchableOpacity>
+                        <TextInput
+                            value={title}
+                            onChangeText={setTitle}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-lg font-semibold text-gray-900 bg-white focus:border-purple-600"
+                            placeholder="Título del cuestionario"
+                            placeholderTextColor="#9CA3AF"
+                        />
+                    </View>
 
-                                <View className="w-8 h-8 bg-purple-600 rounded-full items-center justify-center">
-                                    <Text className="text-white font-bold text-sm">
-                                        {index + 1}
-                                    </Text>
-                                </View>
-
-                                <TouchableOpacity
-                                    onPress={() => moveQuestion(index, "down")}
-                                    disabled={index === questions.length - 1}
-                                    className={`w-8 h-8 items-center justify-center rounded-lg ${
-                                        index === questions.length - 1
-                                            ? "opacity-25"
-                                            : "active:bg-purple-50"
-                                    }`}
-                                >
-                                    <ChevronDown
-                                        size={18}
-                                        color={
-                                            index === questions.length - 1
-                                                ? "#D1D5DB"
-                                                : "#7C3AED"
-                                        }
-                                    />
-                                </TouchableOpacity>
-                            </View>
-
-                            <TextInput
-                                value={q.question}
-                                onChangeText={(val) =>
-                                    updateQuestion(q.id, "question", val)
-                                }
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 focus:border-purple-600"
-                                placeholder="Escribe la pregunta"
-                                placeholderTextColor="#9CA3AF"
-                                multiline
-                                numberOfLines={2}
-                                textAlignVertical="top"
-                            />
-
-                            <TouchableOpacity
-                                onPress={() => deleteQuestion(q.id)}
-                                className="w-10 h-10 items-center justify-center rounded-xl active:bg-red-50"
+                    {/* Questions */}
+                    {questions.map((q, index) => (
+                        // View nativo wrapper — registra la altura real del card
+                        <View
+                            key={q.id}
+                            onLayout={(e) => {
+                                cardHeights.current[q.id] = e.nativeEvent.layout.height;
+                            }}
+                        >
+                            <Animated.View
+                                layout={LAYOUT_TRANSITION}
+                                entering={FadeIn.duration(200)}
+                                exiting={FadeOut.duration(150)}
+                                className="bg-white border border-gray-200 rounded-xl p-5"
                             >
-                                <Trash2 size={20} color="#EF4444" />
-                            </TouchableOpacity>
-                        </View>
+                                {/* Question Header */}
+                                <View className="flex-row items-start gap-3 mb-4">
+                                    <View className="items-center gap-1">
+                                        <TouchableOpacity
+                                            onPress={() => moveQuestion(index, "up")}
+                                            disabled={index === 0}
+                                            className={`w-8 h-8 items-center justify-center rounded-lg ${index === 0 ? "opacity-25" : "active:bg-purple-50"
+                                                }`}
+                                        >
+                                            <ChevronUp
+                                                size={18}
+                                                color={index === 0 ? "#D1D5DB" : "#7C3AED"}
+                                            />
+                                        </TouchableOpacity>
 
-                        {/* Options */}
-                        <View className="ml-11 gap-2">
-                            {q.options.map((option, optIndex) => (
-                                <View
-                                    key={optIndex}
-                                    className="flex-row items-center gap-2"
-                                >
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            updateQuestion(
-                                                q.id,
-                                                "correct",
-                                                optIndex
-                                            )
-                                        }
-                                        className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-                                            optIndex === q.correct
-                                                ? "bg-purple-600 border-purple-600"
-                                                : "border-gray-300"
-                                        }`}
-                                    >
-                                        {optIndex === q.correct && (
-                                            <View className="w-2 h-2 bg-white rounded-full" />
-                                        )}
-                                    </TouchableOpacity>
+                                        <View className="w-8 h-8 bg-purple-600 rounded-full items-center justify-center">
+                                            <Text className="text-white font-bold text-sm">
+                                                {index + 1}
+                                            </Text>
+                                        </View>
+
+                                        <TouchableOpacity
+                                            onPress={() => moveQuestion(index, "down")}
+                                            disabled={index === questions.length - 1}
+                                            className={`w-8 h-8 items-center justify-center rounded-lg ${index === questions.length - 1
+                                                ? "opacity-25"
+                                                : "active:bg-purple-50"
+                                                }`}
+                                        >
+                                            <ChevronDown
+                                                size={18}
+                                                color={
+                                                    index === questions.length - 1
+                                                        ? "#D1D5DB"
+                                                        : "#7C3AED"
+                                                }
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
 
                                     <TextInput
-                                        value={option}
+                                        value={q.question}
                                         onChangeText={(val) =>
-                                            updateOption(q.id, optIndex, val)
+                                            updateQuestion(q.id, "question", val)
                                         }
-                                        className={`flex-1 px-3 py-2 border rounded-lg text-gray-900 focus:border-purple-600 ${
-                                            optIndex === q.correct
-                                                ? "bg-purple-50 border-purple-600"
-                                                : "border-gray-300"
-                                        }`}
-                                        placeholder={`Opción ${optIndex + 1}`}
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg font-semibold text-gray-900 focus:border-purple-600"
+                                        placeholder="Escribe la pregunta"
                                         placeholderTextColor="#9CA3AF"
+                                        multiline
+                                        numberOfLines={2}
+                                        textAlignVertical="top"
                                     />
+
+                                    <TouchableOpacity
+                                        onPress={() => deleteQuestion(q.id)}
+                                        className="w-10 h-10 items-center justify-center rounded-xl active:bg-red-50"
+                                    >
+                                        <Trash2 size={20} color="#EF4444" />
+                                    </TouchableOpacity>
                                 </View>
-                            ))}
 
-                            <Text className="text-xs text-gray-500 mt-2">
-                                Toca el círculo para marcar la respuesta correcta
-                            </Text>
+                                {/* Options */}
+                                <View className="ml-11 gap-2">
+                                    {q.options.map((option, optIndex) => (
+                                        <View
+                                            key={optIndex}
+                                            className="flex-row items-center gap-2"
+                                        >
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    updateQuestion(q.id, "correct", optIndex)
+                                                }
+                                                className={`w-6 h-6 rounded-full border-2 items-center justify-center ${optIndex === q.correct
+                                                    ? "bg-purple-600 border-purple-600"
+                                                    : "border-gray-300"
+                                                    }`}
+                                            >
+                                                {optIndex === q.correct && (
+                                                    <View className="w-2 h-2 bg-white rounded-full" />
+                                                )}
+                                            </TouchableOpacity>
+
+                                            <TextInput
+                                                value={option}
+                                                onChangeText={(val) =>
+                                                    updateOption(q.id, optIndex, val)
+                                                }
+                                                className={`flex-1 px-3 py-2 border rounded-lg text-gray-900 focus:border-purple-600 ${optIndex === q.correct
+                                                    ? "bg-purple-50 border-purple-600"
+                                                    : "border-gray-300"
+                                                    }`}
+                                                placeholder={`Opción ${optIndex + 1}`}
+                                                placeholderTextColor="#9CA3AF"
+                                            />
+                                        </View>
+                                    ))}
+
+                                    <Text className="text-xs text-gray-500 mt-2">
+                                        Toca el círculo para marcar la respuesta correcta
+                                    </Text>
+                                </View>
+                            </Animated.View>
                         </View>
-                    </Animated.View>
-                ))}
+                    ))}
 
-                {/* Add Question Button */}
-                <TouchableOpacity
-                    onPress={addQuestion}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 items-center justify-center flex-row gap-2 active:border-purple-600 active:bg-purple-50"
-                >
-                    <Plus size={24} color="#6B7280" />
-                    <Text className="font-semibold text-gray-500">
-                        Agregar Pregunta
-                    </Text>
-                </TouchableOpacity>
+                    {/* Add Question Button */}
+                    <TouchableOpacity
+                        onPress={addQuestion}
+                        className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 items-center justify-center flex-row gap-2 active:border-purple-600 active:bg-purple-50"
+                    >
+                        <Plus size={24} color="#6B7280" />
+                        <Text className="font-semibold text-gray-500">
+                            Agregar Pregunta
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
 
             {/* Bottom Action */}
@@ -364,6 +388,8 @@ export default function EditQuizScreen() {
 
 const s = StyleSheet.create({
     scrollContent: {
+        paddingHorizontal: 24,
+        paddingTop: 24,
         paddingBottom: 120,
         gap: 16,
     },
