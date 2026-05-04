@@ -28,7 +28,7 @@ const LoginScreen = () => {
                 onError: () => {
                     Alert.alert(
                         "Error",
-                        "Usuario o cotraseña incorrectos. Por favor, inténtalo de nuevo."
+                        "Usuario o contraseña incorrectos. Por favor, inténtalo de nuevo."
                     );
                 }
             }
@@ -36,8 +36,7 @@ const LoginScreen = () => {
     };
 
     const handleForgotPassword = (): void => {
-        // Implementar lógica para recuperar contraseña
-        console.log("Olvidé mi contraseña");
+        router.push("/(auth)/forgot-password");
     };
 
     return (

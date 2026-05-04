@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react-native";
-import { Text, TextInput, View } from "react-native";
+import { KeyboardTypeOptions, Text, TextInput, View } from "react-native";
 
 interface FormFieldProps {
     label: string;
@@ -8,7 +8,7 @@ interface FormFieldProps {
     value: string;
     onChangeText: (text: string) => void;
     secureTextEntry?: boolean;
-    keyboardType?: "email-address" | "default";
+    keyboardType?: KeyboardTypeOptions;
 }
 
 export const FormField = ({

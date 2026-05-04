@@ -1,7 +1,5 @@
 import { Stack } from "expo-router";
 
-const RootLayout = () => {
+export default function ForgotPasswordLayout() {
     return <Stack screenOptions={{ headerShown: false }} />;
-};
-
-export default RootLayout;
+}
