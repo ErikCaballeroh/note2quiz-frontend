@@ -1,11 +1,16 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, ChevronDown, X } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Alert,
     KeyboardAvoidingView,
+    Modal,
     Platform,
+    Pressable,
     ScrollView,
     StyleSheet,
+    Text,
+    TouchableOpacity,
     View,
 } from "react-native";
 
@@ -18,8 +23,10 @@ import {
     EditQuizTitleInput,
 } from "@/src/components/edit";
 
+import { useCategories } from "@/src/hooks/categories/useCategories";
 import { useQuiz } from "@/src/hooks/quizzes/useQuiz";
 import { useUpdateQuiz } from "@/src/hooks/quizzes/useUpdateQuiz";
+import type { CategoryDto } from "@/src/types/dto/categories/category.dto";
 
 const SAVE_BTN_HEIGHT = 76;
 const SCROLL_PADDING = 24; // paddingTop del scrollContent
@@ -42,18 +49,22 @@ export default function EditQuizScreen() {
 
     const [title, setTitle] = useState("");
     const [questions, setQuestions] = useState<EditQuestion[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+    const [isCategorySelectorVisible, setIsCategorySelectorVisible] = useState(false);
 
     // evitar sobreescribir ediciones locales
     const initialLoaded = useRef(false);
 
     // Hook para cargar quiz desde backend
     const { data: quizData, isLoading } = useQuiz(Number(id));
+    const { data: categories = [] } = useCategories();
     const updateMutation = useUpdateQuiz(Number(id));
 
     useEffect(() => {
         if (!quizData || initialLoaded.current) return;
 
         setTitle(quizData.title || "");
+        setSelectedCategoryId(quizData.categoryId ?? null);
 
         const mapped: EditQuestion[] = (quizData.questions || []).map((q, idx) => ({
             id: Date.now() + idx,
@@ -65,6 +76,11 @@ export default function EditQuizScreen() {
         setQuestions(mapped);
         initialLoaded.current = true;
     }, [quizData]);
+
+    const currentCategoryLabel =
+        categories.find((category) => category.id === selectedCategoryId)?.name ??
+        quizData?.category?.name ??
+        "Sin categoría";
 
     // Mantener questionsRef sincronizado
     questionsRef.current = questions;
@@ -153,6 +169,7 @@ export default function EditQuizScreen() {
     const handleSave = () => {
         const payload = {
             title,
+            categoryId: selectedCategoryId ?? undefined,
             questions: questions.map((q) => ({
                 question: q.question,
                 options: q.options.map((text, i) => ({ text, isCorrect: i === q.correct })),
@@ -237,6 +254,26 @@ export default function EditQuizScreen() {
                         }}
                     />
 
+                    <View>
+                        <Text className="mb-2 text-sm font-semibold text-gray-700">
+                            Categoría
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => setIsCategorySelectorVisible(true)}
+                            className="flex-row items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-3"
+                        >
+                            <View>
+                                <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Categoría actual
+                                </Text>
+                                <Text className="mt-1 text-base font-semibold text-gray-900">
+                                    {currentCategoryLabel}
+                                </Text>
+                            </View>
+                            <ChevronDown size={20} color="#6B7280" />
+                        </TouchableOpacity>
+                    </View>
+
                     {/* Questions */}
                     {questions.map((q, index) => (
                         <EditQuestionCard
@@ -268,6 +305,71 @@ export default function EditQuizScreen() {
             </ScrollView>
 
             <EditQuizSaveBar onSave={handleSave} />
+
+            <Modal
+                visible={isCategorySelectorVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setIsCategorySelectorVisible(false)}
+            >
+                <Pressable
+                    className="flex-1 justify-center bg-black/40 px-5"
+                    onPress={() => setIsCategorySelectorVisible(false)}
+                >
+                    <View
+                        className="rounded-2xl bg-white p-5"
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <View className="mb-4 flex-row items-center justify-between">
+                            <Text className="text-lg font-bold text-gray-900">
+                                Cambiar categoría
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => setIsCategorySelectorVisible(false)}
+                                className="h-9 w-9 items-center justify-center rounded-full bg-gray-100"
+                            >
+                                <X size={18} color="#374151" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="gap-2">
+                            {categories.map((category: CategoryDto) => {
+                                const isSelected = category.id === selectedCategoryId;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={category.id}
+                                        onPress={() => {
+                                            setSelectedCategoryId(category.id);
+                                            setIsCategorySelectorVisible(false);
+                                        }}
+                                        className={`flex-row items-center justify-between rounded-xl border px-4 py-3 ${isSelected
+                                                ? "border-purple-600 bg-purple-50"
+                                                : "border-gray-200 bg-gray-50"
+                                            }`}
+                                    >
+                                        <Text
+                                            className={`text-base font-semibold ${isSelected ? "text-purple-700" : "text-gray-800"
+                                                }`}
+                                        >
+                                            {category.name}
+                                        </Text>
+                                        {isSelected ? (
+                                            <Check size={18} color="#7C3AED" />
+                                        ) : null}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        {categories.length === 0 ? (
+                            <Text className="mt-4 text-sm text-gray-500">
+                                No hay categorías disponibles.
+                            </Text>
+                        ) : null}
+                    </View>
+                </Pressable>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
