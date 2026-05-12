@@ -30,6 +30,26 @@ Note2Quiz permite que un usuario:
 - Guardado y organización de quizzes.
 - Estadísticas de usuario y actividad.
 
+## Capturas de Pantalla
+
+### Autenticación
+<img src="./screenshots/login.png" alt="Login" width="250"/> <img src="./screenshots/signup.png" alt="Registro" width="250"/> <img src="./screenshots/forgot-password.png" alt="Recuperar contraseña" width="250"/>
+
+### Flujo de Recuperación de Contraseña
+<img src="./screenshots/code.png" alt="Verificar código" width="250"/> <img src="./screenshots/reset-password.png" alt="Nueva contraseña" width="250"/>
+
+### Captura y Procesamiento
+<img src="./screenshots/capture.png" alt="Captura de apuntes" width="250"/> <img src="./screenshots/processing.png" alt="Procesamiento" width="250"/>
+
+### Inicio y Navegación
+<img src="./screenshots/home.jpg" alt="Inicio" width="250"/>
+
+### Quiz y Edición
+<img src="./screenshots/game.png" alt="Juego de preguntas" width="250"/> <img src="./screenshots/edit.png" alt="Editar cuestionario" width="250"/> <img src="./screenshots/preview.png" alt="Vista previa" width="250"/>
+
+### Resultados y Guardados
+<img src="./screenshots/end-screen.png" alt="Pantalla de resultados" width="250"/> <img src="./screenshots/saved.png" alt="Cuestionarios guardados" width="250"/>
+
 ## Tecnologías
 
 ### Frontend
